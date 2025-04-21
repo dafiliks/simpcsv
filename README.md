@@ -2,8 +2,7 @@
   <img height="75" src="assets/logo.png" alt="simpcsv"/>
 </p>
 
-![SIMPCSV](https://github.com/user-attachments/assets/5f6c8c5b-1a80-4909-8800-c3db0554009b)
-
+## simpcsv
 
 SimpCSV is a simple and lightweight CSV parsing library in C. It is designed to be easy to use and fast enough for most needs (< 5 GB CSV files).
 
