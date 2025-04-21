@@ -1,63 +1,36 @@
+// simpcsv.h
+// Copyright (C) David Filiks
+
 #ifndef SIMPCSV_H
 #define SIMPCSV_H
 
 #include <stdio.h>
 
-#define _SIMPCSV_CHAR_INCREMENT (5 * sizeof(char))
-#define _SIMPCSV_CELL_INCREMENT (5 * sizeof(_SimpCSV_Cell))
+typedef struct
+{
+    char m_quote; // Stores the quote character used in the CSV file.
+    char m_delim; // Stores the delimiter character used in the CSV file.
+    char m_escape; // Stores the escape character used in the CSV file.
+    char* m_source; // Stores the CSV file contents as a string.
+    size_t m_source_size; // Stores the length of the CSV file in characters.
+    size_t m_number_of_rows; // Stores the number of rows in the CSV file. Uninitialized until simpcsv_count_rows_and_cols() is called.
+    size_t m_number_of_cols; // Stores the number of columns in the CSV file. Uninitialized until simpcsv_count_rows_and_cols() is called.
+    char* _m_buffer; // Buffer that is used for parsing. Shouldn't be touched by user.
+} SimpCSVHandle;
 
-#define _SIMPCSV_CELL_CHECK_IF_RESIZE_NEEDED(buffer, index, size, inc)   \
-    if (index == size)                                                   \
-    {                                                                    \
-        size += inc;                                                     \
-        buffer = realloc(buffer, size);                                  \
-    }                                                                    \
+// @brief Allocates more memory to the buffer if needed. Shouldn't be touched by user.
+void _simpcsv_handle_buffer(SimpCSVHandle* handle, size_t index, size_t* size);
 
-#define _SIMPCSV_CHAR_CHECK_IF_RESIZE_NEEDED(buffer, index, size, inc)   \
-    size_t k = size; /* dumb c string stuff */                           \
-    if (index == k)                                                      \
-    {                                                                    \
-        bs += inc;                                                       \
-        buffer = realloc(buffer, bs);                                    \
-    }                                                                    \
+// @brief Opens the CSV file specified using memory mapping.
+SimpCSVHandle* simpcsv_open_file(char* file_name, char quote, char delim, char escape);
 
-typedef struct {
-    size_t m_col;
-    size_t m_row;
-    char* m_data;
-} _SimpCSV_Cell;
+// @brief Gets cell at the specified row and column. 1st cell is (row: 0, col: 0).
+char* simpcsv_get_cell(SimpCSVHandle* handle, size_t row, size_t col);
 
-typedef struct {
-    FILE* m_file;
-    char m_quote;
-    char m_delim;
-    char m_escape;
-    char* m_contents;
-    size_t m_cols;
-    size_t m_rows;
-    _SimpCSV_Cell* m_cell;
-    size_t m_number_of_cells;
-    size_t m_number_of_cols;
-    size_t m_number_of_rows;
-} SimpCSV_Handle;
+// @brief Counts the number of rows and columns in the CSV file. Stores them in handle->m_number_of_rows and handle->m_number_of_cols.
+SimpCSVHandle* simpcsv_count_rows_and_cols(SimpCSVHandle* handle);
 
-SimpCSV_Handle* simpcsv_open_file(char* file_name, char quote, char delim, char escape);
-
-SimpCSV_Handle* simpcsv_parse_file(SimpCSV_Handle* handle);
-
-size_t simpcsv_get_number_of_columns(SimpCSV_Handle* handle);
-
-size_t simpcsv_get_number_of_rows(SimpCSV_Handle* handle);
-
-/* DRAFTS */
-
-//char** simpcsv_get_headers(SimpCSV_Handle* handle);
-// char** simpcsv_get_column(SimpCSV_Handle* handle, const char* column_name);
-// char** simpcsv_get_row(SimpCSV_Handle* handle, size_t row_number);
-// char* simpcsv_get_element(SimpCSV_Handle* handle, const char* column_name, size_t row_number);
-
-/* DRAFTS */
-
-void simpcsv_close_file(SimpCSV_Handle* handle);
+// @brief Unmaps the CSV file and deallocates all dynamically allocated memory.
+void simpcsv_close_file(SimpCSVHandle* handle);
 
 #endif

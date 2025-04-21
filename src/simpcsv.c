@@ -1,112 +1,179 @@
+// simpcsv.c
+// Copyright (C) David Filiks
+
 #include <stdio.h>
+#include <sys/mman.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <stdbool.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <assert.h>
 #include "simpcsv.h"
 
-SimpCSV_Handle* simpcsv_open_file(char* file_name, char quote, char delim, char escape)
+// @param[in] *file_name The name of the CSV file.
+// @param[in] quote The quote character for the CSV file.
+// @param[in] delim The delimiter character for the CSV file.
+// @param[in] escape The escape character for the CSV file.
+// @returns A SimpCSVHandle to the memory mapped CSV file.
+SimpCSVHandle* simpcsv_open_file(char* file_name, char quote, char delim, char escape)
 {
-    SimpCSV_Handle* handle = malloc(sizeof(SimpCSV_Handle));
+    SimpCSVHandle* handle = malloc(sizeof(SimpCSVHandle));
 
     handle->m_quote = quote;
     handle->m_delim = delim;
     handle->m_escape = escape;
 
-    handle->m_file = fopen(file_name, "r");
+    int fd = open(file_name, O_RDONLY);
 
-    fseek(handle->m_file, 0, SEEK_END);
-    size_t size = ftell(handle->m_file);
-    size += 1;
-    fseek(handle->m_file, 0, SEEK_SET);
+    struct stat fs;
 
-    char* buffer = malloc(sizeof(char) * size);
+    fstat(fd, &fs);
 
-    fread(buffer, sizeof(char), size - 1, handle->m_file);
+    handle->m_source_size = fs.st_size + 1; // for null termination
 
-    buffer[size] = '\0';
+    handle->m_source = mmap(NULL, handle->m_source_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
-    handle->m_contents = strdup(buffer);
+    handle->m_source[handle->m_source_size] = '\0';
+
+    close(fd);
 
     return handle;
 }
 
-SimpCSV_Handle* simpcsv_parse_file(SimpCSV_Handle* handle)
+// @param[in] handle Handle to the open CSV file.
+// @param[in] row The desired cell's row number.
+// @param[in] col The desired cell's column number.
+// @returns A string of the contents in the specified cell.
+char* simpcsv_get_cell(SimpCSVHandle* handle, size_t row, size_t col)
 {
-    size_t cs = _SIMPCSV_CELL_INCREMENT, bs = _SIMPCSV_CHAR_INCREMENT, ci = 0, bi = 0;
-    size_t delim_c = 1, escape_c = 1;
+    char* source_ptr = handle->m_source;
 
-    handle->m_cell = malloc(cs);
-    char* buffer = malloc(bs);
+    char target[3];
+    target[0] = handle->m_delim;
+    target[1] = handle->m_quote;
+    target[2] = '\0';
 
-    // slow
-    for (size_t i = 0; i < strlen(handle->m_contents); i++)
+    for (size_t i = 0; i < row; i++)
     {
-        if (handle->m_contents[i] == handle->m_quote)
-        {
-            do
-            {
-                _SIMPCSV_CHAR_CHECK_IF_RESIZE_NEEDED(buffer,
-                                                     bi,
-                                                     bs - 1,
-                                                     _SIMPCSV_CHAR_INCREMENT);
-
-                buffer[bi++] = handle->m_contents[++i];
-            } while (handle->m_contents[i] != handle->m_quote);
-        }
-        while (handle->m_contents[i] != handle->m_delim  &&
-               handle->m_contents[i] != handle->m_escape &&
-               handle->m_contents[i] != '\0')
-        {
-            _SIMPCSV_CHAR_CHECK_IF_RESIZE_NEEDED(buffer,
-                                                 bi,
-                                                 bs - 1,
-                                                 _SIMPCSV_CHAR_INCREMENT);
-
-            buffer[bi++] = handle->m_contents[i++];
-        }
-
-        _SIMPCSV_CELL_CHECK_IF_RESIZE_NEEDED(handle->m_cell,
-                                             ci * sizeof(_SimpCSV_Cell),
-                                             cs, _SIMPCSV_CELL_INCREMENT);
-        buffer[bi] = '\0';
-        handle->m_cell[ci].m_col = delim_c;
-        handle->m_cell[ci].m_row = escape_c;
-
-        if (handle->m_contents[i] == handle->m_delim) delim_c++;
-        else if (handle->m_contents[i] == handle->m_escape)
-        {
-            handle->m_number_of_cols = delim_c; // reassigned every single time - slow
-            escape_c++;
-            delim_c = 1;
-        }
-
-        handle->m_number_of_rows = escape_c; // same thing
-
-        handle->m_cell[ci++].m_data = strdup(buffer);
-        bi = 0;
+        source_ptr = strchr(source_ptr, handle->m_escape) + 1;
     }
 
-    handle->m_number_of_cells = ci;
+    for (size_t i = 0; i < col; i++)
+    {
+        source_ptr = strpbrk(source_ptr, target);
 
-    free(buffer);
+        if (*source_ptr == handle->m_quote)
+        {
+            source_ptr++;
+            source_ptr = strchr(source_ptr, handle->m_quote) + 1;
+
+            while (*source_ptr != handle->m_delim &&
+                   *source_ptr != handle->m_escape &&
+                   *source_ptr != '\0')
+            {
+                source_ptr = strchr(source_ptr, handle->m_quote) + 1;
+            }
+        }
+
+        source_ptr++;
+    }
+
+    size_t bs = 100, bi = 0, i = 0;
+    handle->_m_buffer = calloc(bs, 1);
+
+    while (source_ptr[i] != handle->m_delim &&
+           source_ptr[i] != handle->m_escape)
+    {
+        _simpcsv_handle_buffer(handle, i + 1, &bs);
+
+        if (source_ptr[i] == handle->m_quote)
+        {
+            i++;
+            while (source_ptr[i] != handle->m_quote ||
+                  (source_ptr[i + 1] != handle->m_delim &&
+                   source_ptr[i + 1] != handle->m_escape &&
+                   source_ptr[i + 1] != '\0'))
+            {
+                _simpcsv_handle_buffer(handle, i + 1, &bs);
+
+                handle->_m_buffer[bi++] = source_ptr[i++];
+            }
+
+            break;
+        }
+
+        handle->_m_buffer[bi++] = source_ptr[i++];
+    }
+
+    handle->_m_buffer[bi] = '\0';
+
+    return handle->_m_buffer;
+}
+
+// @param[in] handle Handle to the open CSV file.
+// @returns Returns the handle with updated m_number_of_rows and m_number_of_cols values.
+SimpCSVHandle* simpcsv_count_rows_and_cols(SimpCSVHandle* handle)
+{
+    char* source_ptr = handle->m_source;
+    size_t delim_count = 0, escape_count = 0;
+
+    bool are_all_cols_counted = false;
+
+    char target[4];
+    target[0] = handle->m_delim;
+    target[1] = handle->m_quote;
+    target[2] = handle->m_escape;
+    target[3] = '\0';
+
+    while (*source_ptr != '\0')
+    {
+        source_ptr = strpbrk(source_ptr, target);
+
+        if (*source_ptr == handle->m_quote)
+        {
+            source_ptr++;
+            source_ptr = strchr(source_ptr, handle->m_quote);
+        }
+
+        else if (*source_ptr == handle->m_delim)
+        {
+            if (are_all_cols_counted == false) delim_count++;
+        }
+
+        else if (*source_ptr == handle->m_escape)
+        {
+            escape_count++;
+            are_all_cols_counted = true;
+        }
+
+        source_ptr++;
+    }
+
+    handle->m_number_of_rows = escape_count;
+    handle->m_number_of_cols = ++delim_count; // ++ because last cell in row doesn't get counted
 
     return handle;
 }
 
-size_t simpcsv_get_number_of_columns(SimpCSV_Handle* handle)
+// @param[in] handle Handle to the open CSV file.
+void simpcsv_close_file(SimpCSVHandle* handle)
 {
-    return handle->m_number_of_cols;
-}
-
-size_t simpcsv_get_number_of_rows(SimpCSV_Handle* handle)
-{
-    return handle->m_number_of_rows;
-}
-
-void simpcsv_close_file(SimpCSV_Handle* handle)
-{
-    fclose(handle->m_file);
-    free(handle->m_contents);
-    free(handle->m_cell);
+    munmap(handle->m_source, handle->m_source_size);
+    free(handle->_m_buffer);
     free(handle);
+}
+
+// @param[in] handle Handle to the open CSV file.
+// @param[in] index The current index of the loop.
+// @param[in] *size The current size of the buffer.
+void _simpcsv_handle_buffer(SimpCSVHandle* handle, size_t index, size_t* size)
+{
+    if (index == *size)
+    {
+        *size += 100;
+        handle->_m_buffer = realloc(handle->_m_buffer, *size);
+    }
 }
