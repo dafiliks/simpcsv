@@ -1,4 +1,4 @@
-## simpcsv
+# simpcsv
 
 SimpCSV is a simple and lightweight CSV parsing library in C. It is designed to be easy to use and fast enough for most needs (< 5 GB CSV files).
 
@@ -9,15 +9,16 @@ This library does not check if:
 
 Any segmentation faults that occur are probably the result of the above.
 
-## Table of Contents
+# Table of Contents
 
 *    [Example](#example)
 *    [Benchmark](#benchmark)
+*    [Usage](#usage)
 *    [Docs](#docs)
 *    [Contributing](#contributing)
 *    [License](#license)
 
-## Example
+# Example
 
 ```c
 #include <stdio.h>
@@ -42,7 +43,7 @@ int main(void)
 }
 ```
 
-## Benchmark
+# Benchmark
 
 The benchmark showcases the time it takes to iterate over every cell in the data set on my system.
 
@@ -73,18 +74,24 @@ As you can see from the times, the library works extremely well on smaller files
 The library iterates through cells linearly, therefore the time taken increases greatly as the size and number of cells also increase.
 This does not matter and will not be changed by me (unless needed) as it is a lot faster than required for the purpose that I'm using it for.
 
-## Docs
+# Usage
+
+To use the library, just add the header and source file into your repository, and adjust your build configuration accordingly. 
+This project does not provide a built library object or a script to build it into one, as the library is lightweight enough to import directly into your repository.
+If you NEED to compile this library into a library object, you would need to do that yourself.
+
+# Docs
 
 Every single function is annotated with comments in both the header file and the source file. The comments in the header file contain a quick brief of what each function does. The comments in the source file
 contain more detailed documentation of the function's parameters and return value. The quick example at the top under "Example" also shows you the general layout of a program using SimpCSV and how to iterate through all the cells in a CSV file.
 
 Currently, this project has been developed and tested on Linux (Arch) machines only.
 
-## Contributing
+# Contributing
 
 Feel free to contribute to the project and improve it. There are no strict rules regarding contribution.
 
-## License
+# License
 
 The project is available under the [MIT](https://opensource.org/licenses/MIT) license.
 
