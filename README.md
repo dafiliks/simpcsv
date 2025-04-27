@@ -76,7 +76,7 @@ This does not matter and will not be changed by me (unless needed) as it is a lo
 
 # Usage
 
-To use the library, just add the header and source file into your repository, and adjust your build configuration accordingly. 
+To use the library, add the header and source file into your repository, and adjust your build configuration accordingly. 
 This project does not provide a built library object or a script to build it into one, as the library is lightweight enough to import directly into your repository.
 If you NEED to compile this library into a library object, you would need to do that yourself.
 
