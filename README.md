@@ -1,6 +1,6 @@
 # simpcsv
 
-SimpCSV is a simple and lightweight CSV parsing library in C. It is designed to be easy to use and fast enough for most needs (< 5 GB CSV files).
+SimpCSV is a simple and lightweight CSV parsing library in C. It is designed to be easy to use and fast enough for most needs.
 
 This library does not check if:
 - The CSV file exists.
@@ -60,17 +60,13 @@ You can see my system specs below.
 
 Below, you can see information about the data set and the time it took to iterate over it.
 
+Additional data sets have been removed because they were benchmarked incorrectly.
+
 | Dataset                                                                                                                                                                      | File Size | Time   | Rows       | Columns |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------ | ---------- | ------- |
 | [Amazon reviews](https://www.kaggle.com/datasets/kritanjalijain/amazon-reviews?select=train.csv)                                                                             | 1.59GB    | 0.5s   | 3,600,000  | 3       |
 | [Title-Based Semantic Subject Indexing](https://www.kaggle.com/datasets/hsrobo/titlebased-semantic-subject-indexing?select=pubmed.csv)                                       | 3.99GB    | 1.35s  | 12,834,027 | 4       |
-| [eCommerce behavior data](https://www.kaggle.com/datasets/mkechinov/ecommerce-behavior-data-from-multi-category-store?select=2019-Oct.csv)                                   | 5.67GB    | 10.12s | 42,448,765 | 9       |
-| [Chess matches database (Lichess)](https://www.kaggle.com/datasets/aharon1377/lichess-games-played-in-the-first-trimester-2020?select=lichess_db_standard_rated_2020-01.csv) | 6.06GB    | 11.26s | 46,737,780 | 15      |
-| [Seattle Checkouts by Title](https://www.kaggle.com/datasets/city-of-seattle/seattle-checkouts-by-title?select=checkouts-by-title.csv)                                       | 7.65GB    | 14.95s | 34,892,624 | 11      |
 
-I was unable to test bigger CSV files as my system memory is insufficient.
-
-As you can see from the times, the library works extremely well on smaller files.
 The library iterates through cells linearly, therefore the time taken increases greatly as the size and number of cells also increase.
 This does not matter and will not be changed by me (unless needed) as it is a lot faster than required for the purpose that I'm using it for.
 
