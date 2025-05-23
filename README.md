@@ -22,6 +22,7 @@ Any segmentation faults that occur are probably the result of the above.
 
 ```c
 #include <stdio.h>
+#include "simpcsv.h"
 
 int main(void)
 {
