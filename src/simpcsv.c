@@ -32,11 +32,13 @@ SimpCSVHandle* simpcsv_open_file(char* file_name, char quote, char delim, char e
 
     fstat(fd, &fs);
 
-    handle->m_source_size = fs.st_size + 1; // for null termination
+    handle->m_source_size = fs.st_size;
 
     handle->m_source = mmap(NULL, handle->m_source_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 
     handle->m_source[handle->m_source_size] = '\0';
+
+    handle->_m_buffer = NULL;
 
     close(fd);
 
@@ -82,6 +84,12 @@ char* simpcsv_get_cell(SimpCSVHandle* handle, size_t row, size_t col)
     }
 
     size_t bs = 100, bi = 0, i = 0;
+
+    if (handle->_m_buffer)
+    {
+        free(handle->_m_buffer);
+    }
+
     handle->_m_buffer = calloc(bs, 1);
 
     while (source_ptr[i] != handle->m_delim &&
