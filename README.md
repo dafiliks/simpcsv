@@ -60,8 +60,6 @@ You can see my system specs below.
 
 Below, you can see information about the data set and the time it took to iterate over it.
 
-Additional data sets have been removed because they were benchmarked incorrectly.
-
 | Dataset                                                                                                                                                                      | File Size | Time   | Rows       | Columns |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------ | ---------- | ------- |
 | [Amazon reviews](https://www.kaggle.com/datasets/kritanjalijain/amazon-reviews?select=train.csv)                                                                             | 1.59GB    | 0.5s   | 3,600,000  | 3       |
@@ -73,8 +71,8 @@ This does not matter and will not be changed by me (unless needed) as it is a lo
 # Usage
 
 To use the library, add the header and source file into your repository, and adjust your build configuration accordingly. 
-This project does not provide a built library object or a script to build it into one, as the library is lightweight enough to import directly into your repository.
-If you NEED to compile this library into a library object, you would need to do that yourself.
+This project does not provide a built library or a script to build it into one, as the library is lightweight enough to import directly into your repository.
+If you NEED to compile this library, you would need to do that yourself.
 
 # Docs
 
